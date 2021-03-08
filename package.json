@@ -1,0 +1,31 @@
+{
+  "name": "ants-sdk",
+  "version": "0.0.1",
+  "description": "ANT$ protocol",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "npm run build",
+    "test": "ts-mocha --ui bdd --recursive ./test/**/*.spec.ts",
+    "build": "rm -rf dist/ && tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@justeat/ts-jsonschema-builder": "^1.0.2",
+    "@types/ajv": "^1.0.0",
+    "@types/chai": "^4.2.15",
+    "@types/lodash": "^4.14.168",
+    "@types/mocha": "^8.2.1",
+    "ajv": "^6.12.6",
+    "chai": "^4.3.0",
+    "lodash": "^4.17.21",
+    "mocha": "^8.3.0",
+    "rxjs": "^6.6.6",
+    "symbol-sdk": "^0.23.2",
+    "ts-mocha": "^8.0.0",
+    "utf8": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.32"
+  }
+}

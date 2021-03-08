@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "ES2018",
+    "module": "commonjs",
+    "resolveJsonModule": true,
+    "declaration": true, /* Generates corresponding '.d.ts' file. */
+    "sourceMap": true /* Generates corresponding '.map' file. */,
+    // "outFile": "./",                       /* Concatenate and emit output to single file. */
+    "outDir": "./dist",
+    "suppressImplicitAnyIndexErrors": true,
+    "rootDir": "./" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */,
+    "strict": true,                      /* List of root folders whose combined content represents the structure of the project at runtime. */
+    "typeRoots": [
+      /* List of folders to include type definitions from. */
+      "node_modules/@types"
+    ],
+    "experimentalDecorators": true,
+    /* Enables experimental support for ES7 decorators. */
+    "emitDecoratorMetadata": true,
+    /* Enables experimental support for emitting type metadata for decorators. */
+    "strictPropertyInitialization": false
+  },
+  "include": ["index.ts", "src/**/*.ts", "./node_modules/"],
+  "exclude": ["node_modules", "test/**/*.ts"]
+}
