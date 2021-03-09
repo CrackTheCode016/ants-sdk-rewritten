@@ -18,8 +18,6 @@
  */
 
 import { Address } from "symbol-sdk";
-import { DataPoint, DataPointDTO } from "./DataPoint";
-import { merge } from "lodash";
 
 export interface DataLogDTO {
   name: string;
@@ -50,14 +48,6 @@ export class DataLog {
       hash: this.hash,
     };
   }
-
-  // public toSchemaDTO(): any {
-  //   const datapointDTOs = this.data.map((d) => d.toDTO());
-  //   const obj = new Object();
-  //   console.log(obj);
-  //   datapointDTOs.forEach((point) => (obj[point.key] = point.value));
-  //   return obj;
-  // }
 
   public toString(): string {
     return JSON.stringify(this.toDTO());

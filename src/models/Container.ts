@@ -17,4 +17,54 @@
  *     - Bader Youssef <bader@iodlt.com>
  */
 
-export class Container {}
+import { Address, PublicAccount } from "symbol-sdk";
+import { ContainerState, ContainerStateDTO } from "./ContainerState";
+import { DataSchema, DataSchemaDTO } from "./Schema";
+
+export interface ContainerDTO {
+  name: string;
+  state: ContainerStateDTO;
+  authorizedReporters: Address[];
+  schema: DataSchemaDTO;
+  targetAccount: PublicAccount;
+  owner?: PublicAccount;
+}
+
+export class Container {
+  constructor(
+    readonly name: string,
+    readonly state: ContainerState,
+    readonly authorizedReporters: Address[],
+    readonly schema: DataSchema,
+    readonly targetAccount: PublicAccount,
+    readonly owner?: PublicAccount
+  ) {
+    authorizedReporters.forEach((reporter, i) => {
+      if (i !== authorizedReporters.indexOf(reporter)) {
+        throw Error("Duplicate reporters found");
+      }
+    });
+  }
+
+  public toDTO(): ContainerDTO {
+    return {
+      name: this.name,
+      state: this.state,
+      authorizedReporters: this.authorizedReporters,
+      schema: this.schema.toDTO(),
+      targetAccount: this.targetAccount,
+      owner: this.owner,
+    };
+  }
+
+  public static fromDTO(dto: ContainerDTO): Container {
+    return new Container(
+      dto.name,
+      ContainerState.fromDTO(dto.state),
+      dto.authorizedReporters,
+      DataSchema.fromDTO(dto.schema),
+      dto.targetAccount,
+      dto.owner
+    );
+  }
+}

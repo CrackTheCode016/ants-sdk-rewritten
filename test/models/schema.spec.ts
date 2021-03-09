@@ -14,7 +14,7 @@ describe("Schema Test", () => {
     age: number;
     children: Array<string>;
   }
-
+  
   const schemaTemplate = new Schema<Model>()
     .with((m) => m.name, new StringSchema())
     .with((m) => m.age, new NumberSchema())

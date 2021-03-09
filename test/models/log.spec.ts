@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { Address } from "symbol-sdk";
-import { DataPoint, DataPointDTO } from "../../src/models/DataPoint";
 import { DataLog, DataLogDTO } from "../../src/models/Log";
 
 interface Model {

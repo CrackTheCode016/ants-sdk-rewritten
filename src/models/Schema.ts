@@ -64,6 +64,15 @@ export class DataSchema {
     return JSON.stringify(this.schema.build());
   }
 
+  public static fromDTO(dto: DataSchemaDTO): DataSchema {
+    return new DataSchema(
+      dto.schemaName,
+      dto.bonusRewardPercentage,
+      dto.bonusRewardHexIds,
+      new Schema(JSON.parse(dto.schema))
+    );
+  }
+
   public toDTO(): DataSchemaDTO {
     return {
       schemaName: this.schemaName,
