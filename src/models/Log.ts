@@ -17,7 +17,7 @@
  *     - Bader Youssef <bader@iodlt.com>
  */
 
-import { Address } from "symbol-sdk";
+import { Address, AggregateTransaction, TransferTransaction } from "symbol-sdk";
 
 export interface DataLogDTO {
   name: string;
@@ -66,6 +66,26 @@ export class DataLog {
       dto.timestamp,
       hash
     );
+  }
+
+  public static fromTransaction(tx: AggregateTransaction): DataLog {
+    tx.innerTransactions.splice(0, 1);
+    const reportString = tx.innerTransactions
+      .map((t) => {
+        const transfer = t as TransferTransaction;
+        return transfer.message.payload;
+      })
+      .join("")
+      .replace("\n", "");
+    try {
+      return DataLog.fromDTO(
+        JSON.parse(reportString),
+        tx.transactionInfo?.hash,
+        tx.signer?.address
+      );
+    } catch (e) {
+      throw new Error("Report is not proper JSON");
+    }
   }
 
   /**

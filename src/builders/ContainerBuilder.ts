@@ -41,16 +41,16 @@ import { WatchableTransaction, BaseTransactionBuilder } from "./BaseBuilder";
 export class ContainerBuilder {
   constructor(
     readonly ip: string,
-    readonly networkType: NetworkType = NetworkType.TEST_NET
+    readonly networkType: NetworkType = NetworkType.TEST_NET,
+    readonly epoch: number,
+    readonly generationHash: string
   ) {}
 
   public createContainerOwnership(
     targetAccount: Account,
     cosignatoryPublicAccounts: PublicAccount[],
     approvalDelta: number,
-    removalDelta: number,
-    epoch: number,
-    generationHash: string
+    removalDelta: number
   ): WatchableTransaction {
     const unresolvedAddresses = cosignatoryPublicAccounts.map(
       (acc) => acc.address as UnresolvedAddress
@@ -62,7 +62,7 @@ export class ContainerBuilder {
     );
     baseBuilder.add(
       MultisigAccountModificationTransaction.create(
-        Deadline.create(epoch),
+        Deadline.create(this.epoch),
         approvalDelta,
         removalDelta,
         unresolvedAddresses,
@@ -71,14 +71,12 @@ export class ContainerBuilder {
       ),
       targetAccount.publicAccount
     );
-    return baseBuilder.compile(targetAccount, epoch, generationHash);
+    return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
   }
 
   public addSchemaToContainer(
     containerName: string,
     schema: DataSchema,
-    epoch: number,
-    generationHash: string,
     targetAccount: Account
   ): WatchableTransaction {
     const id = new NamespaceId(containerName);
@@ -92,7 +90,7 @@ export class ContainerBuilder {
     );
     baseBuilder.add(
       NamespaceMetadataTransaction.create(
-        Deadline.create(epoch),
+        Deadline.create(this.epoch),
         targetAccount.address,
         key,
         id,
@@ -102,13 +100,11 @@ export class ContainerBuilder {
       ),
       targetAccount.publicAccount
     );
-    return baseBuilder.compile(targetAccount, epoch, generationHash);
+    return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
   }
 
   public createContainerMetaAssignment(
     container: Container,
-    epoch: number,
-    generationHash: string,
     targetAccount: Account,
     blockTime: number = 15
   ): WatchableTransaction {
@@ -121,13 +117,13 @@ export class ContainerBuilder {
     const durationInBlocks = 365 * (86400 / blockTime);
     const duration = UInt64.fromUint(durationInBlocks); // one year
     const namespaceRegistrationTransaction = NamespaceRegistrationTransaction.createRootNamespace(
-      Deadline.create(epoch),
+      Deadline.create(this.epoch),
       container.name,
       duration,
       this.networkType
     );
     const aliasTransaction = AliasTransaction.createForAddress(
-      Deadline.create(epoch),
+      Deadline.create(this.epoch),
       AliasAction.Link,
       namespaceId,
       targetAccount.address,
@@ -138,17 +134,17 @@ export class ContainerBuilder {
       namespaceRegistrationTransaction,
       targetAccount.publicAccount
     );
-    return baseBuilder.compile(targetAccount, epoch, generationHash);
+    return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
   }
+
+  //TODO: add container state
 
   public updateContainerSchema(
     name: string,
     newSchema: DataSchema,
     oldSchema: DataSchema,
     targetPublicAccount: PublicAccount,
-    signer: Account,
-    epoch: number,
-    generationHash: string
+    signer: Account
   ): WatchableTransaction {
     const baseBuilder = new BaseTransactionBuilder(
       this.ip,
@@ -168,7 +164,7 @@ export class ContainerBuilder {
 
     baseBuilder.add(
       NamespaceMetadataTransaction.create(
-        Deadline.create(epoch),
+        Deadline.create(this.epoch),
         targetPublicAccount.address,
         key,
         id,
@@ -178,6 +174,6 @@ export class ContainerBuilder {
       ),
       targetPublicAccount
     );
-    return baseBuilder.compile(signer, epoch, generationHash);
+    return baseBuilder.compile(signer, this.epoch, this.generationHash);
   }
 }

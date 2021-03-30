@@ -32,14 +32,14 @@ import { BaseTransactionBuilder, WatchableTransaction } from "./BaseBuilder";
 export class LogBuilder {
   constructor(
     readonly ip: string,
-    readonly networkType: NetworkType = NetworkType.TEST_NET
+    readonly networkType: NetworkType = NetworkType.TEST_NET,
+    readonly epoch: number,
+    readonly generationHash: string
   ) {}
 
   public createLog(
     log: DataLog,
     sender: Account,
-    epoch: number,
-    generationHash: string,
     recipient: Address
   ): WatchableTransaction {
     const baseBuilder = new BaseTransactionBuilder(
@@ -49,7 +49,7 @@ export class LogBuilder {
     );
     baseBuilder.add(
       TransferTransaction.create(
-        Deadline.create(epoch),
+        Deadline.create(this.epoch),
         recipient,
         [],
         PlainMessage.create(REPORT_NAME_PREFIX + log.schemaName),
@@ -61,7 +61,7 @@ export class LogBuilder {
     dataChunked.forEach((c) => {
       baseBuilder.add(
         TransferTransaction.create(
-          Deadline.create(epoch),
+          Deadline.create(this.epoch),
           recipient,
           [],
           PlainMessage.create(c),
@@ -71,7 +71,7 @@ export class LogBuilder {
       );
     });
 
-    return baseBuilder.compile(sender, epoch, generationHash);
+    return baseBuilder.compile(sender, this.epoch, this.generationHash);
   }
-//   public createLogWithStateChange(): WatchableTransaction {}
+  //   public createLogWithStateChange(): WatchableTransaction {}
 }

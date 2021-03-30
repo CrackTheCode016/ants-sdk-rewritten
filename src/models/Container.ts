@@ -17,7 +17,7 @@
  *     - Bader Youssef <bader@iodlt.com>
  */
 
-import { Address, PublicAccount } from "symbol-sdk";
+import { Address } from "symbol-sdk";
 import { ContainerState, ContainerStateDTO } from "./ContainerState";
 import { DataSchema, DataSchemaDTO } from "./Schema";
 
@@ -26,8 +26,8 @@ export interface ContainerDTO {
   state: ContainerStateDTO;
   authorizedReporters: Address[];
   schema: DataSchemaDTO;
-  targetAccount: PublicAccount;
-  owner?: PublicAccount;
+  targetAccount: Address;
+  owner?: Address;
 }
 
 export class Container {
@@ -36,8 +36,8 @@ export class Container {
     readonly state: ContainerState,
     readonly authorizedReporters: Address[],
     readonly schema: DataSchema,
-    readonly targetAccount: PublicAccount,
-    readonly owner?: PublicAccount
+    readonly targetAccount: Address,
+    readonly owner?: Address
   ) {
     authorizedReporters.forEach((reporter, i) => {
       if (i !== authorizedReporters.indexOf(reporter)) {

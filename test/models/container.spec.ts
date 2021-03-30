@@ -39,7 +39,7 @@ describe("Container Test", () => {
       state,
       [targetAccount.address],
       schema,
-      targetAccount.publicAccount
+      targetAccount.publicAccount.address
     );
     expect(container).to.not.be.undefined;
     expect(container.name).to.be.equal("container");
@@ -64,7 +64,7 @@ describe("Container Test", () => {
       state,
       [targetAccount.address],
       schema,
-      targetAccount.publicAccount
+      targetAccount.publicAccount.address
     );
     const dto = container.toDTO();
     const newContainer = Container.fromDTO(dto);
@@ -76,8 +76,8 @@ describe("Container Test", () => {
       container.state.latestLogHash
     );
     expect(newContainer.state.status).to.be.equal(container.state.status);
-    expect(newContainer.targetAccount.address.plain()).to.be.equal(
-      container.targetAccount.address.plain()
+    expect(newContainer.targetAccount.plain()).to.be.equal(
+      container.targetAccount.plain()
     );
   });
 
@@ -96,7 +96,7 @@ describe("Container Test", () => {
           state,
           [targetAccount.address, targetAccount.address],
           schema,
-          targetAccount.publicAccount
+          targetAccount.publicAccount.address
         )
     ).to.throw();
   });
@@ -113,12 +113,14 @@ describe("Container Test", () => {
       state,
       [targetAccount.address],
       schema,
-      targetAccount.publicAccount
+      targetAccount.publicAccount.address
     );
     const dto = container.toDTO();
     expect(dto).to.not.be.undefined;
     expect(dto.name).to.be.equal("container");
-    expect(dto.targetAccount.publicKey).to.be.equal(targetAccount.publicKey);
+    expect(dto.targetAccount.plain()).to.be.equal(
+      targetAccount.address.plain()
+    );
     expect(dto.state.status).to.be.equal(ContainerStatus.ACTIVE);
     expect(dto.state.latestLogHash).to.be.equal("");
     expect(dto.schema.schemaName).to.be.equal("schema");
