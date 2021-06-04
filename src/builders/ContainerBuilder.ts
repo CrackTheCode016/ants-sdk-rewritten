@@ -19,7 +19,6 @@
 
 import {
   Account,
-  Address,
   AliasAction,
   AliasTransaction,
   Convert,
@@ -116,12 +115,13 @@ export class ContainerBuilder {
     const namespaceId = new NamespaceId(container.name);
     const durationInBlocks = 365 * (86400 / blockTime);
     const duration = UInt64.fromUint(durationInBlocks); // one year
-    const namespaceRegistrationTransaction = NamespaceRegistrationTransaction.createRootNamespace(
-      Deadline.create(this.epoch),
-      container.name,
-      duration,
-      this.networkType
-    );
+    const namespaceRegistrationTransaction =
+      NamespaceRegistrationTransaction.createRootNamespace(
+        Deadline.create(this.epoch),
+        container.name,
+        duration,
+        this.networkType
+      );
     const aliasTransaction = AliasTransaction.createForAddress(
       Deadline.create(this.epoch),
       AliasAction.Link,
