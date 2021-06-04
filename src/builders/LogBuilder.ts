@@ -59,6 +59,7 @@ export class LogBuilder {
     );
     const dataChunked = log.chunk();
     dataChunked.forEach((c) => {
+      console.log(c);
       baseBuilder.add(
         TransferTransaction.create(
           Deadline.create(this.epoch),

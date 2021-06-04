@@ -77,7 +77,7 @@ describe("Container Transaction Builder Test", () => {
       "http://localhost:3000",
       NetworkType.TEST_NET,
       0,
-      "CC69FAC38D62DA6D2CC4D72D58B85D4FF2F7F78B56F1CCFB8782F3AA6476F829"
+      "B626827FBD912D95931E03E9718BFE8FFD7D316E9FBB5416ED2B3C072EA32406"
     );
 
     const ownershipAssignment = containerBuilder.createContainerOwnership(
@@ -104,7 +104,7 @@ describe("Container Transaction Builder Test", () => {
       "http://localhost:3000",
       NetworkType.TEST_NET,
       0,
-      "CC69FAC38D62DA6D2CC4D72D58B85D4FF2F7F78B56F1CCFB8782F3AA6476F829"
+      "B626827FBD912D95931E03E9718BFE8FFD7D316E9FBB5416ED2B3C072EA32406"
     );
 
     const metadataAssignment = containerBuilder.createContainerMetaAssignment(
@@ -163,7 +163,7 @@ describe("Container Transaction Builder Test", () => {
       "http://localhost:3000",
       NetworkType.TEST_NET,
       0,
-      "CC69FAC38D62DA6D2CC4D72D58B85D4FF2F7F78B56F1CCFB8782F3AA6476F829"
+      "B626827FBD912D95931E03E9718BFE8FFD7D316E9FBB5416ED2B3C072EA32406"
     );
 
     const key = KeyGenerator.generateUInt64Key(
