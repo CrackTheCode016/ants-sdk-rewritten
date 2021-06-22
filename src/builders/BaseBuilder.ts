@@ -17,9 +17,11 @@
  *     - Bader Youssef <bader@iodlt.com>
  */
 
+import { type } from "node:os";
 import { Observable } from "rxjs";
 import {
   Account,
+  AccountInfo,
   AggregateTransaction,
   Deadline,
   InnerTransaction,
@@ -40,7 +42,6 @@ export interface AddedTransaction {
   transaction: Transaction;
   signer: PublicAccount;
 }
-
 
 // TODO: make abstract class here with build method
 
@@ -99,14 +100,24 @@ export class BaseTransactionBuilder {
   }
 
   public compile(
-    signer: Account,
+    primarySigner: Account,
     epoch: number,
-    generationHash: string
+    generationHash: string,
+    signers?: Account[]
   ): WatchableTransaction {
     if (this.transactions.length === 0)
       throw Error("Must have at least one transaction!");
     const aggregateTransaction = this.build(epoch);
-    const signed = signer.sign(aggregateTransaction, generationHash);
+    let signed;
+    if (signers !== undefined) {
+      signed = primarySigner.signTransactionWithCosignatories(
+        aggregateTransaction,
+        signers!,
+        generationHash
+      );
+    } else {
+      signed = primarySigner.sign(aggregateTransaction, generationHash);
+    }
 
     if (this.isComplete) {
       return {

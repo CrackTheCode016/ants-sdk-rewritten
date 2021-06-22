@@ -17,7 +17,13 @@
  *     - Bader Youssef <bader@iodlt.com>
  */
 
-import { asyncScheduler, from, Observable, scheduled } from "rxjs";
+import {
+  asyncScheduler,
+  combineLatest,
+  from,
+  Observable,
+  scheduled,
+} from "rxjs";
 import {
   Account,
   IListener,
@@ -35,11 +41,20 @@ import {
   TransactionType,
   AggregateTransaction,
   TransferTransaction,
+  TransactionStatusError,
+  Transaction,
 } from "symbol-sdk";
 import { ContainerBuilder } from "../builders/ContainerBuilder";
 import { DataLog } from "../models/Log";
 import { Container, DataSchema } from "../models/models";
-import { mergeMap, map, mergeAll, filter, toArray } from "rxjs/operators";
+import {
+  mergeMap,
+  map,
+  mergeAll,
+  filter,
+  toArray,
+  combineAll,
+} from "rxjs/operators";
 import { ContainerState } from "../models/ContainerState";
 import {
   CONTAINER_STATE,
@@ -63,7 +78,9 @@ export class ContainerHttp {
     container: Container,
     initalOwner: Account,
     targetAccount: Account
-  ): Observable<TransactionAnnounceResponse> {
+  ): Observable<
+    TransactionAnnounceResponse | TransactionStatusError | Transaction
+  > {
     return from(this.listener.open()).pipe(
       map(() =>
         this.repositoryFactory
@@ -80,33 +97,50 @@ export class ContainerHttp {
                 )
             ),
             mergeMap((builder) => {
-              const ownership = builder.createContainerOwnership(
-                targetAccount,
-                [initalOwner.publicAccount],
-                1,
-                1
-              );
-
-              const metadata = builder.createContainerMetaAssignment(
+              const create = builder.createContainerMetaAssignment(
                 container,
                 targetAccount
               );
 
-              const addSchema = builder.addSchemaToContainer(
-                container.name,
-                container.schema,
-                targetAccount
-              );
-
-              return metadata.announcable.pipe(
+              return create.announcable.pipe(
                 mergeMap((_) =>
-                  this.listener.confirmed(targetAccount.address, metadata.hash)
+                  this.listener.confirmed(targetAccount.address, create.hash)
                 ),
-                mergeMap((_) => addSchema.announcable),
-                mergeMap((_) =>
-                  this.listener.confirmed(targetAccount.address, addSchema.hash)
-                ),
-                mergeMap((_) => ownership.announcable)
+                mergeMap((_) => {
+                  const addSchema = builder.addSchemaToContainer(
+                    container.name,
+                    container.schema,
+                    targetAccount
+                  );
+                  return addSchema.announcable.pipe(
+                    mergeMap((_) =>
+                      this.listener.confirmed(
+                        targetAccount.address,
+                        addSchema.hash
+                      )
+                    ),
+                    mergeMap((_) => {
+                      const ownership = builder.createContainerOwnership(
+                        targetAccount,
+                        [initalOwner],
+                        1,
+                        1
+                      );
+                      return ownership.announcable.pipe(
+                        mergeMap((_) =>
+                          this.listener.confirmed(
+                            targetAccount.address,
+                            ownership.hash
+                          )
+                        ),
+                        map((_) => {
+                          this.listener.close();
+                          return _;
+                        })
+                      );
+                    })
+                  );
+                })
               );
             })
           )
@@ -170,6 +204,34 @@ export class ContainerHttp {
 
   getContainerByName(containerName: string): Observable<Container> {
     const namespaceId = new NamespaceId(containerName);
+    return combineLatest([
+      this.repositoryFactory
+        .createNamespaceRepository()
+        .getNamespace(namespaceId),
+      this.getAuthorizedReporters(containerName),
+      this.getSchemaFromContainer(containerName),
+      this.getContainerState(containerName),
+      this.repositoryFactory
+        .createNamespaceRepository()
+        .getLinkedAddress(namespaceId),
+    ]).pipe(
+      map((info) => {
+        console.log("INFO:", info!);
+        const state = info![3] as ContainerState;
+        const auth = info![1] as Address[];
+        const schema = info![2] as DataSchema;
+        const namespaceInfo = info![0] as NamespaceInfo;
+        const address = info![4] as Address;
+        return new Container(
+          containerName,
+          state,
+          auth,
+          schema,
+          namespaceInfo.ownerAddress,
+          address
+        );
+      })
+    );
     return scheduled(
       [
         this.repositoryFactory
@@ -184,8 +246,9 @@ export class ContainerHttp {
       ],
       asyncScheduler
     ).pipe(
-      mergeAll(),
+      combineAll(),
       map((info) => {
+        console.log("INFO:", info!);
         const state = info![3] as ContainerState;
         const auth = info![1] as Address[];
         const schema = info![2] as DataSchema;
@@ -254,7 +317,8 @@ export class ContainerHttp {
             .createRestrictionAccountRepository()
             .getAccountRestrictions(address as Address)
         ),
-        mergeMap((restrictions) => restrictions.restrictions.values)
+        mergeMap((restrictions) => restrictions.restrictions),
+        map((restriction) => restriction.values as Address[])
       );
   }
 

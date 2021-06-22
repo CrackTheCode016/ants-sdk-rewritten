@@ -47,11 +47,11 @@ export class ContainerBuilder {
 
   public createContainerOwnership(
     targetAccount: Account,
-    cosignatoryPublicAccounts: PublicAccount[],
+    cosignatoryAccounts: Account[],
     approvalDelta: number,
     removalDelta: number
   ): WatchableTransaction {
-    const unresolvedAddresses = cosignatoryPublicAccounts.map(
+    const unresolvedAddresses = cosignatoryAccounts.map(
       (acc) => acc.address as UnresolvedAddress
     );
     const baseBuilder = new BaseTransactionBuilder(
@@ -70,7 +70,12 @@ export class ContainerBuilder {
       ),
       targetAccount.publicAccount
     );
-    return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
+    return baseBuilder.compile(
+      targetAccount,
+      this.epoch,
+      this.generationHash,
+      cosignatoryAccounts
+    );
   }
 
   public addSchemaToContainer(
@@ -113,7 +118,7 @@ export class ContainerBuilder {
       this.networkType
     );
     const namespaceId = new NamespaceId(container.name);
-    const durationInBlocks = 365 * (86400 / blockTime);
+    const durationInBlocks = 365 * (86400 / 15);
     const duration = UInt64.fromUint(durationInBlocks); // one year
     const namespaceRegistrationTransaction =
       NamespaceRegistrationTransaction.createRootNamespace(
@@ -129,11 +134,11 @@ export class ContainerBuilder {
       targetAccount.address,
       this.networkType
     );
-    baseBuilder.add(aliasTransaction, targetAccount.publicAccount);
     baseBuilder.add(
       namespaceRegistrationTransaction,
       targetAccount.publicAccount
     );
+    baseBuilder.add(aliasTransaction, targetAccount.publicAccount);
     return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
   }
 
