@@ -43,6 +43,7 @@ import {
   TransferTransaction,
   TransactionStatusError,
   Transaction,
+  UInt64,
 } from "symbol-sdk";
 import { ContainerBuilder } from "../builders/ContainerBuilder";
 import { DataLog } from "../models/Log";
@@ -54,8 +55,9 @@ import {
   filter,
   toArray,
   combineAll,
+  zipAll,
 } from "rxjs/operators";
-import { ContainerState } from "../models/ContainerState";
+import { ContainerState, ContainerStatus } from "../models/ContainerState";
 import {
   CONTAINER_STATE,
   REPORT_NAME_PREFIX,
@@ -78,9 +80,7 @@ export class ContainerHttp {
     container: Container,
     initalOwner: Account,
     targetAccount: Account
-  ): Observable<
-    TransactionAnnounceResponse | TransactionStatusError | Transaction
-  > {
+  ): Observable<Transaction | TransactionStatusError> {
     return from(this.listener.open()).pipe(
       map(() =>
         this.repositoryFactory
@@ -97,7 +97,7 @@ export class ContainerHttp {
                 )
             ),
             mergeMap((builder) => {
-              const create = builder.createContainerMetaAssignment(
+              const create = builder.createContainerIdentity(
                 container,
                 targetAccount
               );
@@ -107,9 +107,10 @@ export class ContainerHttp {
                   this.listener.confirmed(targetAccount.address, create.hash)
                 ),
                 mergeMap((_) => {
-                  const addSchema = builder.addSchemaToContainer(
+                  const addSchema = builder.addMetadataToContainer(
                     container.name,
                     container.schema,
+                    container.state,
                     targetAccount
                   );
                   return addSchema.announcable.pipe(
@@ -120,22 +121,37 @@ export class ContainerHttp {
                       )
                     ),
                     mergeMap((_) => {
-                      const ownership = builder.createContainerOwnership(
+                      const addAuthorizedUsers = builder.setAuthorizedUsers(
+                        container.authorizedReporters,
                         targetAccount,
-                        [initalOwner],
-                        1,
-                        1
+                        false
                       );
-                      return ownership.announcable.pipe(
+                      return addAuthorizedUsers.announcable.pipe(
                         mergeMap((_) =>
                           this.listener.confirmed(
                             targetAccount.address,
-                            ownership.hash
+                            addAuthorizedUsers.hash
                           )
                         ),
-                        map((_) => {
-                          this.listener.close();
-                          return _;
+                        mergeMap((_) => {
+                          const ownership = builder.createContainerOwnership(
+                            targetAccount,
+                            [initalOwner],
+                            1,
+                            1
+                          );
+                          return ownership.announcable.pipe(
+                            mergeMap((_) =>
+                              this.listener.confirmed(
+                                targetAccount.address,
+                                ownership.hash
+                              )
+                            ),
+                            map((_) => {
+                              this.listener.close();
+                              return _;
+                            })
+                          );
                         })
                       );
                     })
@@ -152,7 +168,8 @@ export class ContainerHttp {
   editContainerSchema(
     owner: Account,
     containerName: string,
-    newSchema: DataSchema
+    newSchema: DataSchema,
+    oldSchemaName: string
   ): Observable<TransactionAnnounceResponse> {
     const namespaceId = new NamespaceId(containerName);
     return scheduled(
@@ -171,7 +188,7 @@ export class ContainerHttp {
                 )
             )
           ),
-        this.getSchemaFromContainer(containerName),
+        this.getSchemaFromContainer(containerName, oldSchemaName),
 
         this.repositoryFactory
           .createNamespaceRepository()
@@ -202,43 +219,18 @@ export class ContainerHttp {
     );
   }
 
-  getContainerByName(containerName: string): Observable<Container> {
+  getContainerByName(
+    containerName: string,
+    schemaName: string
+  ): Observable<Container> {
     const namespaceId = new NamespaceId(containerName);
-    return combineLatest([
-      this.repositoryFactory
-        .createNamespaceRepository()
-        .getNamespace(namespaceId),
-      this.getAuthorizedReporters(containerName),
-      this.getSchemaFromContainer(containerName),
-      this.getContainerState(containerName),
-      this.repositoryFactory
-        .createNamespaceRepository()
-        .getLinkedAddress(namespaceId),
-    ]).pipe(
-      map((info) => {
-        console.log("INFO:", info!);
-        const state = info![3] as ContainerState;
-        const auth = info![1] as Address[];
-        const schema = info![2] as DataSchema;
-        const namespaceInfo = info![0] as NamespaceInfo;
-        const address = info![4] as Address;
-        return new Container(
-          containerName,
-          state,
-          auth,
-          schema,
-          namespaceInfo.ownerAddress,
-          address
-        );
-      })
-    );
     return scheduled(
       [
         this.repositoryFactory
           .createNamespaceRepository()
           .getNamespace(namespaceId),
         this.getAuthorizedReporters(containerName),
-        this.getSchemaFromContainer(containerName),
+        this.getSchemaFromContainer(containerName, schemaName),
         this.getContainerState(containerName),
         this.repositoryFactory
           .createNamespaceRepository()
@@ -246,12 +238,11 @@ export class ContainerHttp {
       ],
       asyncScheduler
     ).pipe(
-      combineAll(),
+      zipAll(),
       map((info) => {
-        console.log("INFO:", info!);
-        const state = info![3] as ContainerState;
+        const state = info![2] as ContainerState;
         const auth = info![1] as Address[];
-        const schema = info![2] as DataSchema;
+        const schema = info![3] as DataSchema;
         const namespaceInfo = info![0] as NamespaceInfo;
         const address = info![4] as Address;
         return new Container(
@@ -266,8 +257,12 @@ export class ContainerHttp {
     );
   }
 
-  getSchemaFromContainer(containerName: string): Observable<DataSchema> {
+  getSchemaFromContainer(
+    containerName: string,
+    schemaName: string
+  ): Observable<DataSchema> {
     const namespaceId = new NamespaceId(containerName);
+    const key = KeyGenerator.generateUInt64Key(SCHEMA_NAME_PREFIX + schemaName);
     const searchCriteria = {
       targetId: namespaceId,
       metadataType: MetadataType.Namespace,
@@ -277,8 +272,9 @@ export class ContainerHttp {
       .search(searchCriteria)
       .pipe(
         mergeMap((page) => page.data),
-        filter((data) =>
-          data.metadataEntry.value.startsWith(SCHEMA_NAME_PREFIX)
+        filter(
+          (data) =>
+            data.metadataEntry.scopedMetadataKey.toString() == key.toString()
         ),
         map((data) => DataSchema.fromDTO(JSON.parse(data.metadataEntry.value)))
       );

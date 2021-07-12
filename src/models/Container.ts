@@ -44,6 +44,10 @@ export class Container {
         throw Error("Duplicate reporters found");
       }
     });
+    const addresses = authorizedReporters.map((a) => a.plain());
+    if (addresses.indexOf(targetAccount.plain()) == 0) {
+      throw Error("user must not be the target account!");
+    }
   }
 
   public toDTO(): ContainerDTO {

@@ -19,6 +19,9 @@
 
 import {
   Account,
+  AccountRestrictionTransaction,
+  Address,
+  AddressRestrictionFlag,
   AliasAction,
   AliasTransaction,
   Convert,
@@ -33,7 +36,8 @@ import {
   UInt64,
   UnresolvedAddress,
 } from "symbol-sdk";
-import { SCHEMA_NAME_PREFIX } from "../constants";
+import { CONTAINER_STATE, SCHEMA_NAME_PREFIX } from "../constants";
+import { ContainerState } from "../models/ContainerState";
 import { Container, DataSchema } from "../models/models";
 import { WatchableTransaction, BaseTransactionBuilder } from "./BaseBuilder";
 
@@ -78,20 +82,74 @@ export class ContainerBuilder {
     );
   }
 
-  public addSchemaToContainer(
+  public setAuthorizedUsers(
+    users: Address[],
+    targetAccount: Account,
+    remove: boolean
+  ): WatchableTransaction {
+    const baseBuilder = new BaseTransactionBuilder(
+      this.ip,
+      true,
+      this.networkType
+    );
+    if (remove) {
+      baseBuilder.add(
+        AccountRestrictionTransaction.createAddressRestrictionModificationTransaction(
+          Deadline.create(this.epoch),
+          AddressRestrictionFlag.AllowIncomingAddress,
+          [],
+          users,
+          this.networkType
+        ),
+        targetAccount.publicAccount
+      );
+    } else {
+      const address = Address.createFromRawAddress(users[0].plain());
+      baseBuilder.add(
+        AccountRestrictionTransaction.createAddressRestrictionModificationTransaction(
+          Deadline.create(this.epoch),
+          AddressRestrictionFlag.AllowIncomingAddress,
+          [address],
+          [],
+          this.networkType
+        ),
+        targetAccount.publicAccount
+      );
+    }
+    return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
+  }
+
+  public addMetadataToContainer(
     containerName: string,
     schema: DataSchema,
+    state: ContainerState,
     targetAccount: Account
   ): WatchableTransaction {
     const id = new NamespaceId(containerName);
     const key = KeyGenerator.generateUInt64Key(
       SCHEMA_NAME_PREFIX + schema.schemaName
     );
+
+    const stateKey = KeyGenerator.generateUInt64Key(CONTAINER_STATE);
     const baseBuilder = new BaseTransactionBuilder(
       this.ip,
       true,
       this.networkType
     );
+
+    baseBuilder.add(
+      NamespaceMetadataTransaction.create(
+        Deadline.create(this.epoch),
+        targetAccount.address,
+        stateKey,
+        id,
+        JSON.stringify(state.toDTO()).length,
+        JSON.stringify(state.toDTO()),
+        this.networkType
+      ),
+      targetAccount.publicAccount
+    );
+
     baseBuilder.add(
       NamespaceMetadataTransaction.create(
         Deadline.create(this.epoch),
@@ -107,7 +165,7 @@ export class ContainerBuilder {
     return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
   }
 
-  public createContainerMetaAssignment(
+  public createContainerIdentity(
     container: Container,
     targetAccount: Account,
     blockTime: number = 15
@@ -141,8 +199,6 @@ export class ContainerBuilder {
     baseBuilder.add(aliasTransaction, targetAccount.publicAccount);
     return baseBuilder.compile(targetAccount, this.epoch, this.generationHash);
   }
-
-  //TODO: add container state
 
   public updateContainerSchema(
     name: string,
