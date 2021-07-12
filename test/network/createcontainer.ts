@@ -33,6 +33,7 @@ const schema = new DataSchema("schema", 0, ["0x", "0x1"], schemaTemplate);
 const containerHttp = new ContainerHttp(testNodeURL);
 
 const initalOwner = Account.generateNewAccount(NetworkType.TEST_NET);
+const admin = Account.generateNewAccount(NetworkType.TEST_NET);
 const targetAccount = Account.generateNewAccount(NetworkType.TEST_NET);
 const timestamp = new Date();
 const state = new ContainerState(timestamp, "", ContainerStatus.ACTIVE);
@@ -40,29 +41,47 @@ const state = new ContainerState(timestamp, "", ContainerStatus.ACTIVE);
 const container = new Container(
   "mycontainer",
   state,
-  [targetAccount.address],
+  [admin.address],
   schema,
   targetAccount.publicAccount.address
 );
 
+console.log(container);
+
 console.log(
   "INITAL OWNER INFO: ",
-  initalOwner.privateKey,
-  initalOwner.publicKey
+  initalOwner.privateKey + "\n",
+  initalOwner.publicKey + "\n",
+  initalOwner.address.plain()
 );
 console.log(
   "TARGET ACCOUNT INFO: ",
-  targetAccount.privateKey,
-  targetAccount.publicKey
+  targetAccount.privateKey + "\n",
+  targetAccount.publicKey + "\n",
+  targetAccount.address.plain()
 );
 
-containerHttp
-  .publishContainer(container, initalOwner, targetAccount)
-  .pipe(mergeMap((_) => containerHttp.getContainerByName("mycontainer")))
-  .subscribe((r) => {
-    console.log(r);
-  });
+// containerHttp
+//   .publishContainer(container, initalOwner, targetAccount)
+//   .pipe(
+//     mergeMap((_) => containerHttp.getContainerByName("mycontainer", "schema"))
+//   )
+//   .subscribe((r) => {
+//     console.log(r);
+//   });
 
 // containerHttp
-//   .getContainerByName("mycontainer")
+//   .getSchemaFromContainer("mycontainer", "schema")
+//   .subscribe((c) => console.log(c));
+
+// containerHttp
+//   .getContainerState("mycontainer")
+//   .subscribe((c) => console.log(c));
+
+// containerHttp
+//   .getContainerByName("mycontainer", "schema")
+//   .subscribe((c) => console.log(c));
+
+// containerHttp
+//   .getAuthorizedReporters("mycontainer")
 //   .subscribe((c) => console.log(c));
