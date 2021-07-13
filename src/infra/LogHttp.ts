@@ -18,7 +18,14 @@
  */
 
 import { asyncScheduler, Observable, scheduled } from "rxjs";
-import { filter, map, mergeAll, mergeMap, toArray } from "rxjs/operators";
+import {
+  filter,
+  map,
+  mergeAll,
+  mergeMap,
+  toArray,
+  zipAll,
+} from "rxjs/operators";
 import {
   Account,
   Address,
@@ -75,7 +82,9 @@ export class LogHttp {
       ],
       asyncScheduler
     ).pipe(
+      zipAll(),
       map((info) => {
+        console.log(info);
         const builder = info[0] as LogBuilder;
         const recipient = info[1] as Address;
         return builder.createLog(log, sender, recipient).announcable;
@@ -155,9 +164,9 @@ export class LogHttp {
                 aggregate.innerTransactions[0].message.payload.includes(
                   "REPORT-"
                 ) &&
-                (aggregate.innerTransactions[0]
-                  .recipientAddress as Address).plain() ===
-                  containerAddress.plain()
+                (
+                  aggregate.innerTransactions[0].recipientAddress as Address
+                ).plain() === containerAddress.plain()
               );
             })
             .map((tx) => DataLog.fromTransaction(tx as AggregateTransaction))

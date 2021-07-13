@@ -13,7 +13,12 @@ import {
   ContainerStatus,
 } from "../../src/models/ContainerState";
 import { DataSchema } from "../../src/models/Schema";
-import { testNodeURL } from "./testconstants";
+import {
+  testNodeURL,
+  ownerAccountKey,
+  adminAccountKey,
+  targetAccountKey,
+} from "./testconstants";
 
 console.log("PUBLISHING AND RETRIEVING A CONTAINER ");
 
@@ -32,9 +37,19 @@ const schema = new DataSchema("schema", 0, ["0x", "0x1"], schemaTemplate);
 
 const containerHttp = new ContainerHttp(testNodeURL);
 
-const initalOwner = Account.generateNewAccount(NetworkType.TEST_NET);
-const admin = Account.generateNewAccount(NetworkType.TEST_NET);
-const targetAccount = Account.generateNewAccount(NetworkType.TEST_NET);
+const initalOwner = Account.createFromPrivateKey(
+  ownerAccountKey,
+  NetworkType.TEST_NET
+);
+const admin = Account.createFromPrivateKey(
+  adminAccountKey,
+  NetworkType.TEST_NET
+);
+const targetAccount = Account.createFromPrivateKey(
+  targetAccountKey,
+  NetworkType.TEST_NET
+);
+
 const timestamp = new Date();
 const state = new ContainerState(timestamp, "", ContainerStatus.ACTIVE);
 
@@ -45,8 +60,6 @@ const container = new Container(
   schema,
   targetAccount.publicAccount.address
 );
-
-console.log(container);
 
 console.log(
   "INITAL OWNER INFO: ",
@@ -60,28 +73,18 @@ console.log(
   targetAccount.publicKey + "\n",
   targetAccount.address.plain()
 );
+console.log(
+  "ADMIN ACCOUNT INFO: ",
+  admin.privateKey + "\n",
+  admin.publicKey + "\n",
+  admin.address.plain()
+);
 
-// containerHttp
-//   .publishContainer(container, initalOwner, targetAccount)
-//   .pipe(
-//     mergeMap((_) => containerHttp.getContainerByName("mycontainer", "schema"))
-//   )
-//   .subscribe((r) => {
-//     console.log(r);
-//   });
-
-// containerHttp
-//   .getSchemaFromContainer("mycontainer", "schema")
-//   .subscribe((c) => console.log(c));
-
-// containerHttp
-//   .getContainerState("mycontainer")
-//   .subscribe((c) => console.log(c));
-
-// containerHttp
-//   .getContainerByName("mycontainer", "schema")
-//   .subscribe((c) => console.log(c));
-
-// containerHttp
-//   .getAuthorizedReporters("mycontainer")
-//   .subscribe((c) => console.log(c));
+containerHttp
+  .publishContainer(container, initalOwner, targetAccount)
+  .pipe(
+    mergeMap((_) => containerHttp.getContainerByName("mycontainer", "schema"))
+  )
+  .subscribe((r) => {
+    console.log(r);
+  });
