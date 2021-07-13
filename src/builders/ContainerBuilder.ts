@@ -27,6 +27,7 @@ import {
   Convert,
   Deadline,
   KeyGenerator,
+  Metadata,
   MultisigAccountModificationTransaction,
   NamespaceId,
   NamespaceMetadataTransaction,
@@ -203,7 +204,8 @@ export class ContainerBuilder {
   public updateContainerSchema(
     name: string,
     newSchema: DataSchema,
-    oldSchema: DataSchema,
+    oldSchemaName: string,
+    oldSchemaMetadata: Metadata,
     targetPublicAccount: PublicAccount,
     signer: Account
   ): WatchableTransaction {
@@ -213,16 +215,19 @@ export class ContainerBuilder {
       this.networkType
     );
     const key = KeyGenerator.generateUInt64Key(
-      SCHEMA_NAME_PREFIX + oldSchema.schemaName
+      SCHEMA_NAME_PREFIX + oldSchemaName
     );
     const newValueBytes = Convert.utf8ToUint8(
       JSON.stringify(newSchema.toDTO())
     );
     const currentValueBytes = Convert.utf8ToUint8(
-      JSON.stringify(oldSchema.toDTO())
+      oldSchemaMetadata.metadataEntry.value
     );
     const id = new NamespaceId(name);
 
+    console.log(
+      Convert.decodeHex(Convert.xor(currentValueBytes, newValueBytes))
+    );
     baseBuilder.add(
       NamespaceMetadataTransaction.create(
         Deadline.create(this.epoch),

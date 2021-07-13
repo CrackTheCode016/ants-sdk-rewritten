@@ -14,14 +14,8 @@ interface Model {
   children: Array<string>;
 }
 
-const data: Model = {
-  name: "Bader",
-  age: 20,
-  children: ["1", "2", "3", "4", "5", "6"],
-};
-
 const targetAccount = Account.createFromPrivateKey(
-  targetAccountKey,
+  targetAccountKey, 
   NetworkType.TEST_NET
 );
 

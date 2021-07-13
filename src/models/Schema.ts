@@ -32,7 +32,7 @@ export class DataSchema {
     readonly schemaName: string,
     readonly bonusRewardPercentage: number,
     readonly bonusRewardHexIds: string[],
-    readonly schema: Schema<any>
+    readonly schema: Schema<any> | Object
   ) {}
 
   public static createNewSchema<T>(
@@ -60,25 +60,28 @@ export class DataSchema {
     return JSON.stringify(this.toDTO());
   }
 
-  public toSchemaString(): string {
-    return JSON.stringify(this.schema.build());
+  public toSchemaString<T>(): string {
+    const schema = this.schema as Schema<T>;
+    return JSON.stringify(schema.build());
   }
 
-  public static fromDTO(dto: DataSchemaDTO): DataSchema {
+  public static fromDTO<T>(dto: DataSchemaDTO): DataSchema {
+    console.log(JSON.parse(dto.schema));
     return new DataSchema(
       dto.schemaName,
       dto.bonusRewardPercentage,
       dto.bonusRewardHexIds,
-      new Schema(JSON.parse(dto.schema))
+      JSON.parse(dto.schema)
     );
   }
 
-  public toDTO(): DataSchemaDTO {
+  public toDTO<T>(): DataSchemaDTO {
+    const schema = this.schema as Schema<T>;
     return {
       schemaName: this.schemaName,
       bonusRewardPercentage: this.bonusRewardPercentage,
       bonusRewardHexIds: this.bonusRewardHexIds,
-      schema: JSON.stringify(this.schema.build()),
+      schema: JSON.stringify(schema.build()),
     };
   }
 }

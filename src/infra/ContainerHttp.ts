@@ -44,6 +44,7 @@ import {
   TransactionStatusError,
   Transaction,
   UInt64,
+  Metadata,
 } from "symbol-sdk";
 import { ContainerBuilder } from "../builders/ContainerBuilder";
 import { DataLog } from "../models/Log";
@@ -172,6 +173,14 @@ export class ContainerHttp {
     oldSchemaName: string
   ): Observable<TransactionAnnounceResponse> {
     const namespaceId = new NamespaceId(containerName);
+    const key = KeyGenerator.generateUInt64Key(
+      SCHEMA_NAME_PREFIX + oldSchemaName
+    );
+    const searchCriteria = {
+      targetId: namespaceId,
+      metadataType: MetadataType.Namespace,
+    };
+
     return scheduled(
       [
         this.repositoryFactory
@@ -188,8 +197,17 @@ export class ContainerHttp {
                 )
             )
           ),
-        this.getSchemaFromContainer(containerName, oldSchemaName),
-
+        this.repositoryFactory
+          .createMetadataRepository()
+          .search(searchCriteria)
+          .pipe(
+            mergeMap((page) => page.data),
+            filter(
+              (data) =>
+                data.metadataEntry.scopedMetadataKey.toString() ==
+                key.toString()
+            )
+          ),
         this.repositoryFactory
           .createNamespaceRepository()
           .getLinkedAddress(namespaceId)
@@ -203,17 +221,22 @@ export class ContainerHttp {
       ],
       asyncScheduler
     ).pipe(
+      zipAll(),
       map((info) => {
         const builder = info[0] as ContainerBuilder;
-        const oldSchema = info[1] as DataSchema;
+        const oldSchema = info[1] as Metadata;
         const publicAccount = info[2] as AccountInfo;
-        return builder.updateContainerSchema(
+        const update = builder.updateContainerSchema(
           containerName,
           newSchema,
+          oldSchemaName,
           oldSchema,
           publicAccount.publicAccount,
           owner
-        ).announcable;
+        );
+
+        console.log(update.hash);
+        return update.announcable;
       }),
       mergeAll()
     );
@@ -276,7 +299,14 @@ export class ContainerHttp {
           (data) =>
             data.metadataEntry.scopedMetadataKey.toString() == key.toString()
         ),
-        map((data) => DataSchema.fromDTO(JSON.parse(data.metadataEntry.value)))
+        map((data) => {
+          const schema = DataSchema.fromDTO(
+            JSON.parse(data.metadataEntry.value)
+          );
+
+          console.log(schema.schema);
+          return DataSchema.fromDTO(JSON.parse(data.metadataEntry.value));
+        })
       );
   }
 
