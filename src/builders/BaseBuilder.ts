@@ -17,7 +17,6 @@
  *     - Bader Youssef <bader@iodlt.com>
  */
 
-import { type } from "node:os";
 import { Observable } from "rxjs";
 import {
   Account,

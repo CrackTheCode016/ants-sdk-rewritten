@@ -45,9 +45,9 @@ export class Container {
       }
     });
     const addresses = authorizedReporters.map((a) => a.plain());
-    if (addresses.indexOf(targetAccount.plain()) == 0) {
-      throw Error("user must not be the target account!");
-    }
+    // if (addresses.find((e) => e === targetAccount.plain()) !== undefined) {
+    //   throw Error("user must not be the target account!");
+    // }
   }
 
   public toDTO(): ContainerDTO {

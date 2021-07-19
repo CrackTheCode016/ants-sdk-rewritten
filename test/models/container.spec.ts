@@ -5,7 +5,7 @@ import {
   StringSchema,
 } from "@justeat/ts-jsonschema-builder";
 import { expect } from "chai";
-import { Account, NetworkType } from "symbol-sdk";
+import { Account, Address, NetworkType } from "symbol-sdk";
 import { Container, ContainerDTO } from "../../src/models/Container";
 import {
   ContainerState,
@@ -37,7 +37,7 @@ describe("Container Test", () => {
     const container = new Container(
       "container",
       state,
-      [targetAccount.address],
+      [Address.createFromRawAddress("TCTTTUI6USMFEQW36FP35XB6ALI7OLMGGOSMU6Y")],
       schema,
       targetAccount.publicAccount.address
     );
@@ -47,8 +47,8 @@ describe("Container Test", () => {
     expect(container.state.latestLogHash).to.be.equal("");
     expect(container.schema.schemaName).to.be.equal("schema");
     expect(container.authorizedReporters.length).to.be.equal(1);
-    expect(container.authorizedReporters[0].pretty()).to.be.equal(
-      targetAccount.address.pretty()
+    expect(container.authorizedReporters[0].plain()).to.be.equal(
+      "TCTTTUI6USMFEQW36FP35XB6ALI7OLMGGOSMU6Y"
     );
   });
 
@@ -62,7 +62,7 @@ describe("Container Test", () => {
     const container = new Container(
       "container",
       state,
-      [targetAccount.address],
+      [Address.createFromRawAddress("TCTTTUI6USMFEQW36FP35XB6ALI7OLMGGOSMU6Y")],
       schema,
       targetAccount.publicAccount.address
     );
@@ -111,7 +111,7 @@ describe("Container Test", () => {
     const container = new Container(
       "container",
       state,
-      [targetAccount.address],
+      [Address.createFromRawAddress("TCTTTUI6USMFEQW36FP35XB6ALI7OLMGGOSMU6Y")],
       schema,
       targetAccount.publicAccount.address
     );
@@ -125,8 +125,8 @@ describe("Container Test", () => {
     expect(dto.state.latestLogHash).to.be.equal("");
     expect(dto.schema.schemaName).to.be.equal("schema");
     expect(dto.authorizedReporters.length).to.be.equal(1);
-    expect(dto.authorizedReporters[0].pretty()).to.be.equal(
-      targetAccount.address.pretty()
+    expect(dto.authorizedReporters[0].plain()).to.be.equal(
+      "TCTTTUI6USMFEQW36FP35XB6ALI7OLMGGOSMU6Y"
     );
   });
 });
